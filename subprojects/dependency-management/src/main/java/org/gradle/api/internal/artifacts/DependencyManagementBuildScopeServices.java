@@ -31,6 +31,7 @@ import org.gradle.api.internal.artifacts.component.DefaultComponentIdentifierFac
 import org.gradle.api.internal.artifacts.configurations.DependencyMetaDataProvider;
 import org.gradle.api.internal.artifacts.dsl.CapabilityNotationParserFactory;
 import org.gradle.api.internal.artifacts.dsl.dependencies.DependencyFactory;
+import org.gradle.api.internal.artifacts.dsl.dependencies.ProjectFinder;
 import org.gradle.api.internal.artifacts.ivyservice.ArtifactCacheLockingManager;
 import org.gradle.api.internal.artifacts.ivyservice.ArtifactCacheMetadata;
 import org.gradle.api.internal.artifacts.ivyservice.ArtifactCachesProvider;
@@ -127,12 +128,15 @@ import org.gradle.api.internal.project.ProjectStateRegistry;
 import org.gradle.api.internal.properties.GradleProperties;
 import org.gradle.api.internal.resources.ApiTextResourceAdapter;
 import org.gradle.api.internal.runtimeshaded.RuntimeShadedJarFactory;
+import org.gradle.api.internal.std.DefaultDependenciesAccessors;
+import org.gradle.api.internal.std.DependenciesAccessorsWorkspace;
 import org.gradle.cache.CacheRepository;
 import org.gradle.cache.internal.CacheScopeMapping;
 import org.gradle.cache.internal.CleaningInMemoryCacheDecoratorFactory;
 import org.gradle.cache.internal.GeneratedGradleJarCache;
 import org.gradle.cache.internal.InMemoryCacheDecoratorFactory;
 import org.gradle.cache.internal.ProducerGuard;
+import org.gradle.initialization.DependenciesAccessors;
 import org.gradle.configuration.internal.UserCodeApplicationContext;
 import org.gradle.internal.management.DefaultDependencyResolutionManagement;
 import org.gradle.internal.management.DependencyResolutionManagementInternal;
@@ -212,7 +216,8 @@ class DependencyManagementBuildScopeServices {
             dependencyManagementServices,
             fileResolver,
             fileCollectionFactory,
-            dependencyMetaDataProvider);
+            dependencyMetaDataProvider,
+            instantiator);
     }
 
     DependencyManagementServices createDependencyManagementServices(ServiceRegistry parent) {
@@ -235,20 +240,26 @@ class DependencyManagementBuildScopeServices {
         return defaultVersionComparator;
     }
 
+    DefaultProjectDependencyFactory createProjectDependencyFactory(
+        Instantiator instantiator,
+        StartParameter startParameter,
+        ProjectAccessListener projectAccessListener,
+        ImmutableAttributesFactory attributesFactory) {
+        NotationParser<Object, Capability> capabilityNotationParser = new CapabilityNotationParserFactory(false).create();
+        return new DefaultProjectDependencyFactory(
+            projectAccessListener, instantiator, startParameter.isBuildProjectDependencies(), capabilityNotationParser, attributesFactory);
+    }
+
     DependencyFactory createDependencyFactory(
         Instantiator instantiator,
-        ListenerManager listenerManager,
-        StartParameter startParameter,
+        DefaultProjectDependencyFactory factory,
         ClassPathRegistry classPathRegistry,
         CurrentGradleInstallation currentGradleInstallation,
         FileCollectionFactory fileCollectionFactory,
         RuntimeShadedJarFactory runtimeShadedJarFactory,
-        ProjectAccessListener projectAccessListener,
         ImmutableAttributesFactory attributesFactory,
         SimpleMapInterner stringInterner) {
         NotationParser<Object, Capability> capabilityNotationParser = new CapabilityNotationParserFactory(false).create();
-        DefaultProjectDependencyFactory factory = new DefaultProjectDependencyFactory(
-            projectAccessListener, instantiator, startParameter.isBuildProjectDependencies(), capabilityNotationParser, attributesFactory);
         ProjectDependencyFactory projectDependencyFactory = new ProjectDependencyFactory(factory);
 
         return new DefaultDependencyFactory(
@@ -674,4 +685,9 @@ class DependencyManagementBuildScopeServices {
             }
         });
     }
+
+    DependenciesAccessors createDependenciesAccessorGenerator(ClassPathRegistry registry, DependenciesAccessorsWorkspace workspace, DefaultProjectDependencyFactory factory) {
+        return new DefaultDependenciesAccessors(registry, workspace, factory);
+    }
+
 }

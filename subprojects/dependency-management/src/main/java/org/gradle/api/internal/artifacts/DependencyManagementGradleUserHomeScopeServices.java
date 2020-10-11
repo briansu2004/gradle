@@ -25,11 +25,13 @@ import org.gradle.api.internal.artifacts.ivyservice.DefaultArtifactCaches;
 import org.gradle.api.internal.artifacts.transform.ImmutableTransformationWorkspaceProvider;
 import org.gradle.api.internal.cache.StringInterner;
 import org.gradle.api.internal.changedetection.state.DefaultExecutionHistoryCacheAccess;
+import org.gradle.api.internal.std.DependenciesAccessorsWorkspace;
 import org.gradle.cache.CacheRepository;
 import org.gradle.cache.internal.CacheScopeMapping;
 import org.gradle.cache.internal.InMemoryCacheDecoratorFactory;
 import org.gradle.cache.internal.UsedGradleVersions;
 import org.gradle.initialization.RootBuildLifecycleListener;
+import org.gradle.initialization.layout.ProjectCacheDir;
 import org.gradle.internal.event.ListenerManager;
 import org.gradle.internal.execution.history.ExecutionHistoryCacheAccess;
 import org.gradle.internal.execution.history.ExecutionHistoryStore;
@@ -109,4 +111,5 @@ public class DependencyManagementGradleUserHomeScopeServices {
         });
         return workspaceProvider;
     }
+
 }
